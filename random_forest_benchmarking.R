@@ -62,6 +62,10 @@ for(i in names(train_df)){
   test_df[[i]] <- test_df[[i]] %>% tidyr::replace_na(list(i=0))
 }
 
+for(i in names(train_df)){
+  train_df[[i]] <- as.integer(train_df[[i]])
+  test_df[[i]] <- as.integer(test_df[[i]])
+}
 
 
 #Define randomForest::randomForest model
@@ -116,5 +120,41 @@ confusionMatrix(as.factor(ranger_preds$predictions), as.factor(test_labels))
 # Pos Pred Value : 0.8890        
 # Neg Pred Value : 0.7654        
 # Prevalence : 0.7638
+
+### h2o RandomForest Implementation ###
+library(h2o)
+h2o.init(nthreads = -1)
+
+train_hx <- as.data.frame(train_df %>% mutate('target_label'= labels))
+train_hx$target_label <- as.factor(train_hx$target_label)
+train_df.hex <- as.h2o(train_hx, destination_frame = 'train_df.hex')
+
+test_hx <- as.data.frame(test_df %>% mutate('target_label' = test_labels))
+test_hx$target_label <- as.factor(test_hx$target_label)
+test_df.hex <- as.h2o(test_hx, destination_frame = 'test_df.hex')
+
+system.time({
+  h2o_rf <- h2o.randomForest(y='target_label', training_frame = train_df.hex, ntrees = 500)
+  })
+
+# Get h2o_rf predictions
+h2o_preds1 <- h2o.predict(h2o_rf, test_df.hex)$p1>=0.5
+
+# Evaluate h2o_preds
+confusionMatrix(as.factor(as.vector(h2o_preds1)), as.factor(test_labels))
+
+#                 Reference
+# Prediction       0     1
+#          0     11737  1537
+#          1       698  2309
+
+# Accuracy : 0.8627
+# Sensitivity : 0.9439         
+# Specificity : 0.6004         
+# Pos Pred Value : 0.8842         
+# Neg Pred Value : 0.7679         
+# Prevalence : 0.7638 
+
+h2o.shutdown(prompt = FALSE)
 
 
