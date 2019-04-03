@@ -65,14 +65,56 @@ for(i in names(train_df)){
 
 
 #Define randomForest::randomForest model
-adult_random_forest <- randomForest::randomForest(x=train_df,
+system.time({adult_random_forest <- randomForest::randomForest(x=train_df,
                                                   y=as.factor(labels), 
                                                   proximity=TRUE, 
-                                                  importance=TRUE)
+                                                  importance=TRUE)})
+# user       system     elapsed 
+# 2944.410   1818.999   5706.952
+
 #Get predictions from randomForest::randomForest model
+arf_preds <- predict(adult_random_forest, test_df)
 
 #Evaluate performance of randomForest::randomForest model
+confusionMatrix(as.factor(arf_preds),as.factor(test_labels))
 
+#                Reference
+#   Prediction   0      1
+#        0      11716  1466
+#        1      719    2380
 
+#Accuracy : 0.8658
+#Sensitivity : 0.9422         
+#Specificity : 0.6188         
+#Pos Pred Value : 0.8888         
+#Neg Pred Value : 0.7680         
+#Prevalence : 0.7638 
+
+### ranger (Fast RandomForest Implementation) ###
+ranger_train_df <- as.data.frame(train_df %>% mutate('target_label'= labels))
+ranger_train_df$target_label <- as.factor(ranger_train_df$target_label)
+system.time({
+  ranger_rf <- ranger::ranger(dependent.variable.name = 'target_label', data=ranger_train_df)
+  })
+# user      system   elapsed 
+# 129.279   0.661    36.568
+
+# Predict with ranger_rf
+ranger_preds <- predict(ranger_rf, test_df)
+
+# Evaluate ranger_preds
+confusionMatrix(as.factor(ranger_preds$predictions), as.factor(test_labels))
+
+#               Reference
+# Prediction     0     1
+#          0  11704   1461
+#          1    731   2385
+
+# Accuracy : 0.8654
+# Sensitivity : 0.9412        
+# Specificity : 0.6201        
+# Pos Pred Value : 0.8890        
+# Neg Pred Value : 0.7654        
+# Prevalence : 0.7638
 
 
