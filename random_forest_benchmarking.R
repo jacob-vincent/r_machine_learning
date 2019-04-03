@@ -136,6 +136,8 @@ test_df.hex <- as.h2o(test_hx, destination_frame = 'test_df.hex')
 system.time({
   h2o_rf <- h2o.randomForest(y='target_label', training_frame = train_df.hex, ntrees = 500)
   })
+# user    system    elapsed 
+# 0.781    0.172     64.493 
 
 # Get h2o_rf predictions
 h2o_preds1 <- h2o.predict(h2o_rf, test_df.hex)$p1>=0.5
